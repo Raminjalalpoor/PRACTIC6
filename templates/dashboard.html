@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% block title %}Дашборд — Shop Analytics RU{% endblock %}
+{% block body_class %}dashboard-page{% endblock %}
+
+{% block header_actions %}
+<div class="header-actions">
+    <span class="file-chip" title="{{ filename }}"><i></i>{{ filename }}</span>
+    <a class="btn btn-header" href="{{ url_for('main.index') }}">Новый анализ</a>
+</div>
+{% endblock %}
+
+{% block content %}
+<main class="dashboard-main">
+    <div class="container-fluid app-container">
+        <section class="dashboard-heading d-flex flex-wrap align-items-end justify-content-between gap-3">
+            <div>
+                <div class="eyebrow dark"><span></span> Операционная аналитика</div>
+                <h1>Панель продаж</h1>
+                <p>Период данных: {{ date_min[8:10] }}.{{ date_min[5:7] }}.{{ date_min[:4] }} — {{ date_max[8:10] }}.{{ date_max[5:7] }}.{{ date_max[:4] }}</p>
+            </div>
+            {% if has_data %}
+            <a class="btn btn-export" href="{{ url_for('main.export_report', date_from=filters.date_from, date_to=filters.date_to, product=filters.product) }}">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 5-5m-5 5-5-5M5 19h14"/></svg>
+                Скачать Excel
+            </a>
+            {% endif %}
+        </section>
+
+        <section class="filter-panel">
+            <form method="get" action="{{ url_for('main.dashboard') }}" class="row g-3 align-items-end">
+                <div class="col-sm-6 col-lg-3">
+                    <label class="form-label" for="date-from">Дата с</label>
+                    <input class="form-control" id="date-from" name="date_from" type="date" min="{{ date_min }}" max="{{ date_max }}" value="{{ filters.date_from }}">
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <label class="form-label" for="date-to">Дата по</label>
+                    <input class="form-control" id="date-to" name="date_to" type="date" min="{{ date_min }}" max="{{ date_max }}" value="{{ filters.date_to }}">
+                </div>
+                <div class="col-lg-3">
+                    <label class="form-label" for="product">Товар</label>
+                    <select class="form-select" id="product" name="product">
+                        <option value="">Все товары</option>
+                        {% for product in products %}<option value="{{ product }}" {% if filters.product == product %}selected{% endif %}>{{ product }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="col-sm-6 col-lg-auto"><button class="btn btn-filter w-100" type="submit">Применить</button></div>
+                <div class="col-sm-6 col-lg-auto"><a class="btn btn-reset w-100" href="{{ url_for('main.dashboard') }}">Сбросить</a></div>
+            </form>
+        </section>
+
+        {% if not has_data %}
+        <section class="empty-state">
+            <div class="empty-icon">0</div>
+            <h2>Нет данных для отображения</h2>
+            <p>{{ empty_message }}</p>
+            <a class="btn btn-filter" href="{{ url_for('main.dashboard') }}">Сбросить фильтры</a>
+        </section>
+        {% else %}
+        <section class="kpi-grid">
+            <article class="kpi-card primary">
+                <div class="kpi-label">Общая выручка <span class="status-dot">●</span></div>
+                <div class="kpi-value">{{ analysis.metrics.revenue|rubles }}</div>
+                <div class="kpi-note">за выбранный период</div>
+            </article>
+            <article class="kpi-card">
+                <div class="kpi-label">Продано единиц</div>
+                <div class="kpi-value">{{ analysis.metrics.units|number_ru }}</div>
+                <div class="kpi-note">товаров суммарно</div>
+            </article>
+            <article class="kpi-card">
+                <div class="kpi-label">Операций в файле</div>
+                <div class="kpi-value">{{ analysis.metrics.records|number_ru }}</div>
+                <div class="kpi-note">строк продаж</div>
+            </article>
+            <article class="kpi-card">
+                <div class="kpi-label">Ассортимент</div>
+                <div class="kpi-value">{{ analysis.metrics.unique_products }}</div>
+                <div class="kpi-note">уникальных товаров</div>
+            </article>
+            <article class="kpi-card">
+                <div class="kpi-label">Средняя операция</div>
+                <div class="kpi-value">{{ analysis.metrics.average_operation|rubles }}</div>
+                <div class="kpi-note">выручка на строку</div>
+            </article>
+            <article class="kpi-card leader">
+                <div class="kpi-label">Лидер спроса</div>
+                <div class="kpi-value product-name">{{ analysis.metrics.popular_product }}</div>
+                <div class="kpi-note">по количеству · выручка: {{ analysis.metrics.revenue_leader }}</div>
+            </article>
+        </section>
+
+        <section class="forecast-banner">
+            <div class="forecast-intro">
+                <div class="forecast-icon">
+                    <svg viewBox="0 0 32 32"><path d="M5 23 12 16l5 4 10-12M21 8h6v6"/></svg>
+                </div>
+                <div><span>Прогноз спроса</span><h2>{{ analysis.forecast.next_month|capitalize }}</h2></div>
+            </div>
+            {% if analysis.forecast.available %}
+                <div class="forecast-total"><span>Ожидаемый объем</span><strong>{{ analysis.forecast.total|number_ru }} <small>ед.</small></strong></div>
+                <p>{{ analysis.forecast.message }}</p>
+            {% else %}
+                <p class="forecast-unavailable">{{ analysis.forecast.message }}</p>
+            {% endif %}
+        </section>
+
+        <section class="charts-grid">
+            <article class="content-card chart-wide">
+                <div class="card-heading"><div><span>Динамика</span><h2>Выручка по месяцам</h2></div><div class="legend-key blue">Выручка, ₽</div></div>
+                <div class="chart-wrap">{{ charts.revenue|safe }}</div>
+            </article>
+            <article class="content-card">
+                <div class="card-heading"><div><span>Ассортимент</span><h2>ТОП-10 товаров</h2></div></div>
+                <div class="chart-wrap">{{ charts.products|safe }}</div>
+            </article>
+            <article class="content-card">
+                <div class="card-heading"><div><span>Структура</span><h2>Доля по категориям</h2></div></div>
+                {% if not category_supplied %}<div class="category-note">Столбец «Категория» не найден — данные объединены.</div>{% endif %}
+                <div class="chart-wrap">{{ charts.categories|safe }}</div>
+            </article>
+        </section>
+
+        <section class="insights-grid">
+            <article class="content-card">
+                <div class="card-heading"><div><span>Модель</span><h2>Прогноз по товарам</h2></div></div>
+                {% if forecast_rows %}
+                <div class="table-responsive compact-table-wrap">
+                    <table class="table analytics-table align-middle">
+                        <thead><tr><th>Товар</th><th class="text-end">Прогноз</th><th class="text-end">Изменение</th></tr></thead>
+                        <tbody>
+                        {% for row in forecast_rows %}
+                            <tr><td><strong>{{ row['Товар'] }}</strong></td><td class="text-end">{{ row['Прогноз']|number_ru }} ед.</td><td class="text-end">
+                                {% if row['Изменение'] is not none %}<span class="change-pill {% if row['Изменение'] >= 0 %}up{% else %}down{% endif %}">{{ '%+.0f'|format(row['Изменение']) }}%</span>{% else %}<span class="muted">—</span>{% endif %}
+                            </td></tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}<p class="muted-block">Недостаточно истории по отдельным товарам.</p>{% endif %}
+            </article>
+
+            <article class="content-card recommendation-card">
+                <div class="card-heading"><div><span>Рекомендации</span><h2>Что учесть в закупках</h2></div>{% if analysis.seasonality.available %}<div class="peak-chip">Пик: {{ analysis.seasonality.peak_month }}</div>{% endif %}</div>
+                <p class="model-note">{{ analysis.seasonality.message }}</p>
+                {% if analysis.seasonality.recommendations %}
+                <ol class="recommendation-list">
+                    {% for item in analysis.seasonality.recommendations %}<li><span>{{ loop.index }}</span><p>{{ item }}</p></li>{% endfor %}
+                </ol>
+                {% endif %}
+            </article>
+        </section>
+
+        <section class="content-card sales-section">
+            <div class="card-heading table-heading">
+                <div><span>Детализация</span><h2>Таблица продаж</h2></div>
+                <div class="records-chip">{{ total_rows|number_ru }} записей{% if total_rows > 100 %} · показаны последние 100{% endif %}</div>
+            </div>
+            <div class="table-responsive sales-table-wrap">
+                <table class="table analytics-table sales-table align-middle">
+                    <thead><tr><th>Дата</th><th>Товар</th><th>Категория</th><th class="text-end">Количество</th><th class="text-end">Цена</th><th class="text-end">Выручка</th></tr></thead>
+                    <tbody>
+                    {% for row in sales_table %}
+                        <tr><td class="text-nowrap">{{ row['Дата'] }}</td><td><strong>{{ row['Товар'] }}</strong></td><td><span class="category-tag">{{ row['Категория'] }}</span></td><td class="text-end">{{ row['Количество']|number_ru }}</td><td class="text-end">{{ row['Цена']|rubles }}</td><td class="text-end revenue-cell">{{ row['Выручка']|rubles }}</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        {% endif %}
+    </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+{% if has_data %}<script>{{ plotly_js|safe }}</script>{% endif %}
+{% endblock %}

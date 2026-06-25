@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Shop Analytics RU — аналитика продаж{% endblock %}
+{% block body_class %}landing-page{% endblock %}
+
+{% block content %}
+<main>
+    <section class="hero-section">
+        <div class="hero-glow hero-glow-one"></div>
+        <div class="hero-glow hero-glow-two"></div>
+        <div class="container-fluid app-container position-relative">
+            <div class="row align-items-center g-5">
+                <div class="col-lg-7">
+                    <div class="eyebrow"><span></span> Аналитическая платформа для ритейла</div>
+                    <h1>Продажи становятся<br><em>понятными.</em></h1>
+                    <p class="hero-lead">Загрузите данные магазина и получите ключевые показатели, интерактивные графики, прогноз спроса и готовый Excel-отчет.</p>
+                    <div class="hero-points">
+                        <span>CSV и XLSX</span>
+                        <span>Прогноз спроса</span>
+                        <span>Отчет за минуту</span>
+                    </div>
+                </div>
+                <div class="col-lg-5">
+                    <div class="upload-panel">
+                        <div class="panel-kicker">Новый анализ</div>
+                        <h2>Загрузите продажи</h2>
+                        <p>Ожидаемые столбцы: Дата, Товар, Количество, Цена. Категория — опционально.</p>
+
+                        {% if error %}
+                            <div class="alert alert-danger compact-alert" role="alert">{{ error }}</div>
+                        {% endif %}
+
+                        <form action="{{ url_for('main.upload') }}" method="post" enctype="multipart/form-data" id="upload-form">
+                            <label class="drop-zone" id="drop-zone" for="sales-file">
+                                <span class="upload-icon" aria-hidden="true">
+                                    <svg viewBox="0 0 48 48"><path d="M24 33V13m0 0-8 8m8-8 8 8M10 31v5a4 4 0 0 0 4 4h20a4 4 0 0 0 4-4v-5"/></svg>
+                                </span>
+                                <strong id="file-label">Перетащите файл сюда</strong>
+                                <span>или нажмите, чтобы выбрать</span>
+                                <small>CSV, XLSX · до 16 МБ</small>
+                                <input id="sales-file" name="sales_file" type="file" accept=".csv,.xlsx" required>
+                            </label>
+                            <button class="btn btn-accent w-100" type="submit" id="analyse-button">
+                                <span>Провести анализ</span><span aria-hidden="true">→</span>
+                            </button>
+                        </form>
+                        <div class="sample-link">
+                            Нет подходящего файла? <a href="{{ url_for('main.demo_file') }}">Скачать пример CSV</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="capabilities-section">
+        <div class="container-fluid app-container">
+            <div class="section-heading">
+                <span>Возможности</span>
+                <h2>От файла до управленческого решения</h2>
+            </div>
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <article class="capability-card">
+                        <div class="capability-number">01</div>
+                        <h3>Чистые показатели</h3>
+                        <p>Выручка, объем продаж, средняя операция и лидеры ассортимента без ручных формул.</p>
+                    </article>
+                </div>
+                <div class="col-md-4">
+                    <article class="capability-card featured">
+                        <div class="capability-number">02</div>
+                        <h3>Прогноз спроса</h3>
+                        <p>Линейная модель оценивает следующий месяц и подсвечивает товары с растущим спросом.</p>
+                    </article>
+                </div>
+                <div class="col-md-4">
+                    <article class="capability-card">
+                        <div class="capability-number">03</div>
+                        <h3>Отчет для работы</h3>
+                        <p>Пять структурированных листов Excel с показателями, продажами и прогнозом.</p>
+                    </article>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+{% endblock %}
+
+{% block scripts %}<script src="{{ url_for('static', filename='app.js') }}"></script>{% endblock %}
